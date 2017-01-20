@@ -28,76 +28,94 @@ else: #create the File
     conn.commit()
     conn.close()
 
-
-
-
-if os.path.isfile(sqlite_file):
-    sqlite_file = 'my_stocks.sqlite'    # name of the sqlite database file
-    # Connecting to the database file
-    conn = sqlite3.connect(sqlite_file)
-    c = conn.cursor()
-    print "Please enter the data for the stock purchase."
-    while True:
-        dateInput = raw_input("Date in format of (2016-12-31):")
-        try:
-            dateValue = datetime.datetime.strptime(dateInput,"%Y-%m-%d")
-            break
-        except:
+def add_transaction():
+    if os.path.isfile(sqlite_file):
+        # Connecting to the database file
+        conn = sqlite3.connect(sqlite_file)
+        c = conn.cursor()
+        print "Please enter the data for the stock purchase."
+        while True:
+            dateInput = raw_input("Date in format of (2016-12-31):")
             try:
-                dateValue = datetime.datetime.strptime(dateInput,"%b %d, %Y")
+                dateValue = datetime.datetime.strptime(dateInput,"%Y-%m-%d")
                 break
             except:
                 try:
-                    dateValue = datetime.datetime.strptime(dateInput,"%d %b %Y")
+                    dateValue = datetime.datetime.strptime(dateInput,"%b %d, %Y")
                     break
                 except:
                     try:
-                        dateValue = datetime.datetime.strptime(dateInput,'%m/%d/%Y')
+                        dateValue = datetime.datetime.strptime(dateInput,"%d %b %Y")
                         break
                     except:
                         try:
-                            dateValue = datetime.datetime.strptime(dateInput,'%m/%d/%y')
+                            dateValue = datetime.datetime.strptime(dateInput,'%m/%d/%Y')
                             break
                         except:
-                            print "I don't understand that date, please try again."
-    print "I think your date is: ", str(dateValue.date())
-    actionInput = ""
-    while actionInput == "":
-        actionInput = raw_input('Action (BUY or SELL):').upper()
-    stockInput = ""
-    while stockInput == "":
-        stockInput = raw_input("Stock symbol (F):").upper()
-    typeInput = raw_input("Commodity (STOCK):").upper()
-    if typeInput == "":
-        typeInput = "STOCK"
-        print "We'll assume you meant STOCK"
-    while True:
+                            try:
+                                dateValue = datetime.datetime.strptime(dateInput,'%m/%d/%y')
+                                break
+                            except:
+                                print "I don't understand that date, please try again."
+        print "I think your date is: ", str(dateValue.date())
+        actionInput = ""
+        while actionInput == "":
+            actionInput = raw_input('Action (BUY or SELL):').upper()
+        stockInput = ""
+        while stockInput == "":
+            stockInput = raw_input("Stock symbol (F):").upper()
+        typeInput = raw_input("Commodity (STOCK):").upper()
+        if typeInput == "":
+            typeInput = "STOCK"
+            print "We'll assume you meant STOCK"
+        while True:
+            try:
+                priceInput = float(raw_input("Transaction Price (10.00):"))
+                break
+            except:
+                print "Please enter the price."
         try:
-            priceInput = float(raw_input("Transaction Price (10.00):"))
-            break
+            comissionInput = float(raw_input("Comission costs (8.95):"))
         except:
-            print "Please enter the price."
-    try:
-        comissionInput = float(raw_input("Comission costs (8.95):"))
-    except:
-        print "we'll just assume you meant 8.95"
-        comissionInput = float(8.95)
-    try:
-        feesInput = float(raw_input("Fees (0.00):"))
-    except:
-        print "we'll just assume you meant 0.00"
-        feesInput = float(0.00)
-    while True:
+            print "we'll just assume you meant 8.95"
+            comissionInput = float(8.95)
         try:
-            quantityInput = int(raw_input("Quantity traded (100):"))
-            break
+            feesInput = float(raw_input("Fees (0.00):"))
         except:
-            print "I'm going to need you to try that again"
-    print "Your transaction is as follows:"
-    statement = (actionInput, typeInput, stockInput, str(dateValue.date()), comissionInput, feesInput, priceInput, quantityInput)
-    print statement
-    c.execute('INSERT INTO transactions VALUES (NULL,?,?,?,?,?,?,?,?)', statement)
-    conn.commit()
-    conn.close()
-else: #create the File
-    print "Something is wrong with the file."
+            print "we'll just assume you meant 0.00"
+            feesInput = float(0.00)
+        while True:
+            try:
+                quantityInput = int(raw_input("Quantity traded (100):"))
+                break
+            except:
+                print "I'm going to need you to try that again"
+        print "Your transaction is as follows:"
+        statement = (actionInput, typeInput, stockInput, str(dateValue.date()), comissionInput, feesInput, priceInput, quantityInput)
+        print statement
+        c.execute('INSERT INTO transactions VALUES (NULL,?,?,?,?,?,?,?,?)', statement)
+        conn.commit()
+        conn.close()
+    else: #create the File
+        print "Something is wrong with the file."
+
+while True:
+    print "You're in the stock program. Time to make some money!"
+    print ""
+    print "Your current positions are as follow:"
+    print "THE POSITIONS"
+    print ("""
+    1. View transaction list
+    2. Add a transaction
+    3. Quit
+    """)
+    ans=raw_input("What would you like to do? ")
+    if ans=="1":
+        pass
+    elif ans=="2":
+        add_transaction()
+    elif ans=="3":
+        print("\n Goodbye")
+        break
+    elif ans !="":
+        print("\n Not Valid Choice Try again")
