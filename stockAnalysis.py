@@ -23,10 +23,23 @@ else: #create the File
     comission REAL,
     fees REAL,
     price REAL,
-    quantity INTEGER)
+    quantity INTEGER,
+    total REAL)
     ''')
     conn.commit()
     conn.close()
+
+def refresh_positions():
+    #SELECT DISTINCT stock FROM transactions
+    #
+    #For stockSymbol each loop
+    #   lets add up shares and totals and get price per share
+    #   SELECT * FROM transactions WHERE stock = stockSymbol
+    #
+    #   lets look up price per share
+    #   data = Share(stockSymbol)
+    #   data.get_price()
+    pass
 
 def add_transaction():
     if os.path.isfile(sqlite_file):
@@ -90,10 +103,14 @@ def add_transaction():
                 break
             except:
                 print "I'm going to need you to try that again"
+        if actionInput == "BUY":
+            total = quantityInput * priceInput + comissionInput + feesInput
+        elif actionInput == "SELL":
+            total = quantityInput * priceInput - comissionInput - feesInput
         print "Your transaction is as follows:"
-        statement = (actionInput, typeInput, stockInput, str(dateValue.date()), comissionInput, feesInput, priceInput, quantityInput)
+        statement = (actionInput, typeInput, stockInput, str(dateValue.date()), comissionInput, feesInput, priceInput, quantityInput, total)
         print statement
-        c.execute('INSERT INTO transactions VALUES (NULL,?,?,?,?,?,?,?,?)', statement)
+        c.execute('INSERT INTO transactions VALUES (NULL,?,?,?,?,?,?,?,?,?)', statement)
         conn.commit()
         conn.close()
     else: #create the File
@@ -103,7 +120,8 @@ while True:
     print "You're in the stock program. Time to make some money!"
     print ""
     print "Your current positions are as follow:"
-    print "THE POSITIONS"
+    refresh_positions()
+    # print "THE POSITIONS"
     print ("""
     1. View transaction list
     2. Add a transaction
