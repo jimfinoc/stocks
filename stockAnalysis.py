@@ -6,7 +6,7 @@ import datetime
 
 # check to see if the database file exist and if not, create it.
 sqlite_file = 'my_stocks.sqlite'
-import_file = "import_stock.csv"
+import_file = 'import_stock.csv'
 
 if os.path.isfile(sqlite_file):
     # print "File looks like it exist."
@@ -20,7 +20,7 @@ else: #create the File
     c = conn.cursor()
     c.execute('''
     CREATE TABLE transactions (
-    id INTEGER AUTO_INCREMENT PRIMARY KEY,
+    id INTEGER PRIMARY KEY,
     action TEXT,
     type TEXT,
     stock TEXT,
@@ -152,7 +152,7 @@ def add_transaction():
         print "Your transaction is as follows:"
         statement = (actionInput, typeInput, stockInput, str(dateValue.date()), comissionInput, feesInput, priceInput, quantityInput, total)
         print statement
-        c.execute('INSERT INTO transactions VALUES (NULL,?,?,?,?,?,?,?,?,?)', statement)
+        c.execute('INSERT INTO transactions (action, type, stock, date, comission, fees, price, quantity, total) VALUES (?,?,?,?,?,?,?,?,?)', statement)
         conn.commit()
         conn.close()
     else: #create the File
@@ -204,7 +204,10 @@ def view_transactions():
         conn.text_factory = str
         c = conn.cursor()
         c.execute('SELECT * FROM transactions')
-        print c.fetchall()
+        # print c.fetchall()
+        for each in c:
+            print each
+
         conn.commit()
         conn.close()
     else: #create the File
