@@ -16,6 +16,7 @@ else: #create the File
     sqlite_file = 'my_stocks.sqlite'    # name of the sqlite database file
     # Connecting to the database file
     conn = sqlite3.connect(sqlite_file)
+    conn.text_factory = str
     c = conn.cursor()
     c.execute('''
     CREATE TABLE transactions (
@@ -45,9 +46,33 @@ def refresh_positions():
     #   data.get_price()
     if os.path.isfile(sqlite_file):
         conn = sqlite3.connect(sqlite_file)
+        conn.text_factory = str
         c = conn.cursor()
         c.execute('SELECT DISTINCT stock FROM transactions')
-        print c.fetchall()
+        listOfDistinctStocks = c.fetchall()
+        for distinctStock in listOfDistinctStocks:
+            # print distinctStock[0],
+            c.execute('SELECT quantity,total FROM transactions WHERE stock=?',distinctStock)
+            listOfStockDetails = c.fetchall()
+            shares = 0
+            totals = 0
+            for individualDetails in listOfStockDetails:
+                shares = shares + individualDetails[0]
+                totals = totals + individualDetails[1]
+            data = Share(distinctStock)
+            currentPrice = data.get_price()
+            print '{:>4}'.format(distinctStock[0]),
+            print " shares:", '{:>4}'.format(shares),
+            print " costs:", '{:>8}'.format(totals),
+            print " per share:", '{:>5}'.format(round(totals/shares,2)),
+            print " current price:", '{:>6}'.format(currentPrice),
+            print " value:",  '{:>7}'.format(shares * float(currentPrice)),
+            if shares * float(currentPrice) > totals:
+                print '{:>6}'.format("profit"), '{:>6}'.format(str(int(shares) * float(currentPrice) - float(totals)))
+            else:
+                print '{:>6}'.format("loss"), '{:>6}'.format(str(float(totals) - int(shares) * float(currentPrice)))
+
+        print
         conn.commit()
         conn.close()
     else: #create the File
@@ -57,6 +82,7 @@ def add_transaction():
     if os.path.isfile(sqlite_file):
         # Connecting to the database file
         conn = sqlite3.connect(sqlite_file)
+        conn.text_factory = str
         c = conn.cursor()
         print "Please enter the data for the stock purchase."
         while True:
@@ -135,6 +161,7 @@ def add_transaction():
 def import_transactions():
     if os.path.isfile(sqlite_file) and os.path.isfile(import_file):
         conn = sqlite3.connect(sqlite_file)
+        conn.text_factory = str
         c = conn.cursor()
         print "Please ensure your data is in a comma seperated value format of"
         print "Action, Type, Symbol, Date, Price, Quantity, Comission, & Fees"
@@ -174,6 +201,7 @@ def view_transactions():
     if os.path.isfile(sqlite_file):
         # Connecting to the database file
         conn = sqlite3.connect(sqlite_file)
+        conn.text_factory = str
         c = conn.cursor()
         c.execute('SELECT * FROM transactions')
         print c.fetchall()
@@ -182,7 +210,19 @@ def view_transactions():
     else: #create the File
         print "Something is wrong with the file."
 
-
+def delete_transactions():
+    if os.path.isfile(sqlite_file):
+        # print "File looks like it exist."
+        print "Creating the database."
+        # Connecting to the database file
+        conn = sqlite3.connect(sqlite_file)
+        conn.text_factory = str
+        c = conn.cursor()
+        c.execute("DELETE FROM transactions")
+        conn.commit()
+        conn.close()
+    else: #create the File
+        pass
 
 print "You're in the stock program. Time to make some money!"
 while True:
@@ -193,6 +233,7 @@ while True:
     print "1. View transaction list"
     print "2. Add a transaction"
     print "3. Import transactions from ", import_file
+    print "4. Delete all transactions"
     print "Q. Quit"
     ans=raw_input("What would you like to do? ")
     if ans=="1":
@@ -201,6 +242,8 @@ while True:
         add_transaction()
     elif ans=="3":
         import_transactions()
+    elif ans=="4":
+        delete_transactions()
     elif ans=="q" or ans=="Q":
         print("Goodbye")
         break
