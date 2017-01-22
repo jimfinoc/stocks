@@ -3,10 +3,14 @@ import sqlite3
 from yahoo_finance import Share
 import os.path
 import datetime
+import os
+os.system('cls' if os.name == 'nt' else 'clear')
 
 # check to see if the database file exist and if not, create it.
 sqlite_file = 'my_stocks.sqlite'
 import_file = 'import_stock.csv'
+positionDisplay = 2
+dividendDisplay = 1
 
 if os.path.isfile(sqlite_file):
     # print "File looks like it exist."
@@ -35,21 +39,16 @@ else: #create the File
     conn.close()
 
 def refresh_positions():
-    #SELECT DISTINCT stock FROM transactions
-    #
-    #For stockSymbol each loop
-    #   lets add up shares and totals and get price per share
-    #   SELECT * FROM transactions WHERE stock = stockSymbol
-    #
-    #   lets look up price per share
-    #   data = Share(stockSymbol)
-    #   data.get_price()
     if os.path.isfile(sqlite_file):
+        print "Your current positions are as follow:"
+        print
         conn = sqlite3.connect(sqlite_file)
         conn.text_factory = str
         c = conn.cursor()
         c.execute('SELECT DISTINCT stock FROM transactions')
         listOfDistinctStocks = c.fetchall()
+        grandTotalCost = 0
+        grandCurrentValue = 0
         for distinctStock in listOfDistinctStocks:
             # print distinctStock[0],
             c.execute('SELECT quantity,total FROM transactions WHERE stock=?',distinctStock)
@@ -61,16 +60,42 @@ def refresh_positions():
                 totals = totals + individualDetails[1]
             data = Share(distinctStock)
             currentPrice = data.get_price()
-            print '{:>4}'.format(distinctStock[0]),
-            print " shares:", '{:>4}'.format(shares),
-            print " costs:", '{:>8}'.format(totals),
-            print " per share:", '{:>5}'.format(round(totals/shares,2)),
-            print " current price:", '{:>6}'.format(currentPrice),
-            print " value:",  '{:>7}'.format(shares * float(currentPrice)),
-            if shares * float(currentPrice) > totals:
-                print '{:>6}'.format("profit"), '{:>6}'.format(str(int(shares) * float(currentPrice) - float(totals)))
+            grandTotalCost = grandTotalCost + totals
+            grandCurrentValue = grandCurrentValue + shares * float(currentPrice)
+            if positionDisplay == 1:
+                print '{:>4}'.format(distinctStock[0]),
+                print " shares:", '{:>4}'.format(shares),
+                print " costs:", '{:>8}'.format(totals),
+                print " per share:", '{:>5.2f}'.format(round(totals/shares,2)),
+                print " current price:", '{:>6}'.format(currentPrice),
+                print " value:",  '{:>7}'.format(shares * float(currentPrice)),
+                if shares * float(currentPrice) > totals:
+                    print '{:>6}'.format("profit"), '{:>6.2f}'.format(int(shares) * float(currentPrice) - float(totals))
+                else:
+                    print '{:>6}'.format("loss"), '{:>6.2f}'.format(float(totals) - int(shares) * float(currentPrice))
+            elif positionDisplay == 2:
+                print '{:>4}'.format(shares),
+                print "shares of ",
+                print '{:>4}'.format(distinctStock[0]),
+                print "for:",
+                print '{:>8.2f}'.format(totals),
+                print "(each:", '{:>5.2f}'.format(round(totals/shares,2)), ")",
+                print "value:",  '{:>9.2f}'.format(shares * float(currentPrice)),
+                print "per share:", '{:>6.2f}'.format(float(currentPrice)),
+
+                if shares * float(currentPrice) > totals:
+                    print '{:>6}'.format("profit"), '{:>7.2f}'.format(int(shares) * float(currentPrice) - float(totals))
+                else:
+                    print '{:>6}'.format("loss"), '{:>7.2f}'.format(float(totals) - int(shares) * float(currentPrice))
             else:
-                print '{:>6}'.format("loss"), '{:>6}'.format(str(float(totals) - int(shares) * float(currentPrice)))
+                pass
+        print
+        print "Total Position Cost:", '{:>13}'.format(grandTotalCost), '{:>22}'.format("Total Present Value:"), '{:>8}'.format(grandCurrentValue),
+        if grandCurrentValue > grandTotalCost:
+            print '{:>21}'.format("Total Profit:"),  '{:>10.2f}'.format(grandCurrentValue - grandTotalCost)
+        else:
+            print '{:>21}'.format("Total Loss:"), '{:>10.2f}'.format(grandTotalCost - grandCurrentValue)
+
 
         print
         conn.commit()
@@ -227,19 +252,79 @@ def delete_transactions():
     else: #create the File
         pass
 
+def dividend_information():
+    if os.path.isfile(sqlite_file):
+        print "The last divident paid was as follows:"
+        print
+        conn = sqlite3.connect(sqlite_file)
+        conn.text_factory = str
+        c = conn.cursor()
+        c.execute('SELECT DISTINCT stock FROM transactions')
+        listOfDistinctStocks = c.fetchall()
+        grandTotalCost = 0
+        grandCurrentValue = 0
+        for distinctStock in listOfDistinctStocks:
+            # print distinctStock[0],
+            c.execute('SELECT quantity,total FROM transactions WHERE stock=?',distinctStock)
+            listOfStockDetails = c.fetchall()
+            shares = 0
+            totals = 0
+            for individualDetails in listOfStockDetails:
+                shares = shares + individualDetails[0]
+                totals = totals + individualDetails[1]
+            data = Share(distinctStock)
+            dividend = data.get_dividend_share(),
+            dividend_pay_date = data.get_dividend_pay_date()
+            dividend_ex_date = data.get_ex_dividend_date()
+            grandTotalCost = grandTotalCost + totals
+            if dividendDisplay == 1:
+                print '{:>4}'.format(distinctStock[0]),
+                # print " shares:", '{:>4}'.format(shares),
+                # print " costs:", '{:>8}'.format(totals),
+                print '{:>4.2f}'.format(float(dividend[0])),
+                print '{:>4}'.format(dividend_pay_date),
+                # print dividend_ex_date,
+                # print data.get_one_yr_target_price(),
+                # print " per share:", '{:>5.2f}'.format(round(totals/shares,2)),
+                # print " current price:", '{:>6}'.format(currentPrice),
+                # print " value:",  '{:>7}'.format(shares * float(currentPrice)),
+                # if shares * float(currentPrice) > totals:
+                    # print '{:>6}'.format("profit"), '{:>6.2f}'.format(int(shares) * float(currentPrice) - float(totals))
+                # else:
+                    # print '{:>6}'.format("loss"), '{:>6.2f}'.format(float(totals) - int(shares) * float(currentPrice))
+                print
+            else:
+                pass
+            # print "Dividend", data.get_dividend_share(),
+            # print "Dividend pay date", data.get_dividend_pay_date()
+        # print "Total Position Cost:", '{:>13}'.format(grandTotalCost), '{:>22}'.format("Total Present Value:"), '{:>8}'.format(grandCurrentValue),
+        # if grandCurrentValue > grandTotalCost:
+        #     print '{:>21}'.format("Total Profit:"),  '{:>10.2f}'.format(grandCurrentValue - grandTotalCost)
+        # else:
+        #     print '{:>21}'.format("Total Loss:"), '{:>10.2f}'.format(grandTotalCost - grandCurrentValue)
+        print
+        conn.commit()
+        conn.close()
+    else: #create the File
+        pass
+
+
 print "You're in the stock program. Time to make some money!"
+print
+refresh_positions()
 while True:
-    print ""
-    print "Your current positions are as follow:"
-    refresh_positions()
     # print "THE POSITIONS"
     print "1. View transaction list"
     print "2. Add a transaction"
     print "3. Import transactions from ", import_file
     print "4. Delete all transactions"
+    print "5. Get dividend information"
     print "Q. Quit"
+    print
     ans=raw_input("What would you like to do? ")
-    if ans=="1":
+    if ans == "0":
+        refresh_positions()
+    elif ans=="1":
         view_transactions()
     elif ans=="2":
         add_transaction()
@@ -247,6 +332,8 @@ while True:
         import_transactions()
     elif ans=="4":
         delete_transactions()
+    elif ans=="5":
+        dividend_information()
     elif ans=="q" or ans=="Q":
         print("Goodbye")
         break
